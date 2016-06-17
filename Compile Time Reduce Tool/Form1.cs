@@ -47,6 +47,7 @@ namespace Compile_Time_Reduce_Tool
                     switch(xmlData.Name)
                     {
                         case "ClCompile":
+                        case "ClInclude":
                             string data = xmlData.GetAttribute("Include");
                             if(data != null)
                             {
