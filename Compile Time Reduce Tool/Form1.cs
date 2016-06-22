@@ -18,12 +18,15 @@ namespace Compile_Time_Reduce_Tool
         OpenFileDialog ofd = new OpenFileDialog();
         XmlTextReader xmlData = null;
         List<string> cppList = new List<string>();
+        string projectFileName;
+        string solutionFileName;
         
         public Form1()
         {
             InitializeComponent();
-            ofd.Filter = "Visual Studio Project|*.vcxproj";
+/*            ofd.Filter = "Visual Studio Project|*.vcxproj";*/
             ofd.Title = "Visual Studio Project File Select";
+            ofd.Multiselect = true;
             ofd.InitialDirectory = @"C:\";
         }
               
@@ -32,11 +35,24 @@ namespace Compile_Time_Reduce_Tool
         {
             if(ofd.ShowDialog() == DialogResult.OK)
             {
-                FilePathTextBox.Text = ofd.FileName;
-                LoadXML(ofd.FileName);
+                string[] files = ofd.FileNames;
+                for (int i = 0; i < files.Count(); ++i )
+                {
+                    if(true == files[i].Contains(".sln"))
+                    {
+                        solutionFileName = files[i];
+                    }
+                    else if (true == files[i].Contains(".vcxproj"))
+                    {
+                        projectFileName = files[i];
+                    }
+                }
+
+                LoadXML(projectFileName);
+
                 if(0 != cppList.Count)
                 {
-                    BuildCppFile(ofd.FileName);
+                    BuildCppFile(solutionFileName);
                     /*ofd.file*/
                 }
                 else
@@ -65,7 +81,6 @@ namespace Compile_Time_Reduce_Tool
                             {
                                 ResultTextBox.Text += index++ +". " + data + "\n";
                                 cppList.Add(data);
- 
                             }
                             break;
                     }
@@ -78,7 +93,8 @@ namespace Compile_Time_Reduce_Tool
         {
             ProcessStartInfo cmd = new ProcessStartInfo();
             Process process = new Process();
-            cmd.FileName = @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe";
+            cmd.FileName = @"cmd";
+            cmd.Arguments = @"C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\VsDevCmd.bat";
             cmd.WindowStyle = ProcessWindowStyle.Hidden;             // cmd창이 숨겨지도록 하기
             cmd.CreateNoWindow = false;                               // cmd창을 띄우지 안도록 하기
 
@@ -90,7 +106,10 @@ namespace Compile_Time_Reduce_Tool
             process.EnableRaisingEvents = false;
             process.StartInfo = cmd;
             process.Start();
-            process.StandardInput.Write(@"msbuild /?" + Environment.NewLine); // 명령어를 보낼때는 꼭 마무리를 해줘야 한다. 그래서 마지막에 NewLine가 필요하다
+            string str = @"msbuild " + fileName + @" /t:ClCompile /p:SelectedFiles=""" + cppList[0];
+//             str = @"msbuild " + fileName + @" /t:ClCompile /p:Configulation=Debug /p:Platform=x64";
+            process.StandardInput.WriteLine(@"cd c:/");
+            process.StandardInput.Write(str + Environment.NewLine); // 명령어를 보낼때는 꼭 마무리를 해줘야 한다. 그래서 마지막에 NewLine가 필요하다
             process.StandardInput.Close();
 
             string result = process.StandardOutput.ReadToEnd();
